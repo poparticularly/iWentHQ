@@ -103,13 +103,36 @@ const MOCK_EVENTS: Record<string, CalendarEvent[]> = {
   ]
 };
 
+const MONTH_NAMES = {
+  TR: ['OCAK', 'ŞUBAT', 'MART', 'NİSAN', 'MAYIS', 'HAZİRAN', 'TEMMUZ', 'AĞUSTOS', 'EYLÜL', 'EKİM', 'KASIM', 'ARALIK'],
+  EN: ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE', 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER']
+};
+
 export const Calendar: React.FC<CalendarProps> = ({ onEventClick, onScrollAction, language }) => {
   const [selectedDate, setSelectedDate] = useState(new Date(2026, 0, 12));
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const lastScrollTop = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const daysContainerRef = useRef<HTMLDivElement>(null);
 
-  const januaryDays = Array.from({ length: 31 }, (_, i) => new Date(2026, 0, i + 1));
+  const currentYear = selectedDate.getFullYear();
+  const currentMonth = selectedDate.getMonth();
+
+  const daysInMonth = Array.from(
+    { length: new Date(currentYear, currentMonth + 1, 0).getDate() },
+    (_, i) => new Date(currentYear, currentMonth, i + 1)
+  );
+
+  const handleMonthChange = (increment: number) => {
+    // Navigate to the first day of the next/prev month to avoid overflow issues
+    const newDate = new Date(currentYear, currentMonth + increment, 1);
+    setSelectedDate(newDate);
+    
+    // Reset scroll to beginning when changing month
+    if (daysContainerRef.current) {
+        daysContainerRef.current.scrollLeft = 0;
+    }
+  };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const st = e.currentTarget.scrollTop;
@@ -133,6 +156,7 @@ export const Calendar: React.FC<CalendarProps> = ({ onEventClick, onScrollAction
   };
 
   const activeEvents = MOCK_EVENTS[formatDateKey(selectedDate)] || [];
+  const monthName = language === 'TR' ? MONTH_NAMES.TR[currentMonth] : MONTH_NAMES.EN[currentMonth];
 
   return (
     <div className="flex-1 flex flex-col bg-black h-full overflow-hidden relative font-display">
@@ -143,15 +167,29 @@ export const Calendar: React.FC<CalendarProps> = ({ onEventClick, onScrollAction
         }`}
       >
         <div className="px-6 mb-8 flex justify-between items-center mt-4">
-          <button className="text-white/20 hover:text-white transition-colors active:scale-75"><span className="material-icons-round">chevron_left</span></button>
-          <h2 className="text-[16px] font-black tracking-[0.2em] text-white uppercase">OCAK 2026</h2>
-          <button className="text-white/20 hover:text-white transition-colors active:scale-75"><span className="material-icons-round">chevron_right</span></button>
+          <button 
+            onClick={() => handleMonthChange(-1)}
+            className="text-white/20 hover:text-white transition-colors active:scale-75 p-2"
+          >
+            <span className="material-icons-round">chevron_left</span>
+          </button>
+          <h2 className="text-[16px] font-black tracking-[0.2em] text-white uppercase">{monthName} {currentYear}</h2>
+          <button 
+            onClick={() => handleMonthChange(1)}
+            className="text-white/20 hover:text-white transition-colors active:scale-75 p-2"
+          >
+            <span className="material-icons-round">chevron_right</span>
+          </button>
         </div>
 
-        <div className="flex gap-4 overflow-x-auto no-scrollbar px-6 pb-2">
-          {januaryDays.map((date) => {
+        <div 
+            ref={daysContainerRef}
+            className="flex gap-4 overflow-x-auto no-scrollbar px-6 pb-2 snap-x snap-mandatory"
+        >
+          {daysInMonth.map((date) => {
             const isSelected = date.getDate() === selectedDate.getDate();
-            const dayName = date.toLocaleDateString('tr-TR', { weekday: 'short' }).toUpperCase();
+            const locale = language === 'TR' ? 'tr-TR' : 'en-US';
+            const dayName = date.toLocaleDateString(locale, { weekday: 'short' }).toUpperCase();
             const dateKey = formatDateKey(date);
             const hasEvent = !!MOCK_EVENTS[dateKey];
 
@@ -159,7 +197,7 @@ export const Calendar: React.FC<CalendarProps> = ({ onEventClick, onScrollAction
               <div 
                 key={date.getTime()}
                 onClick={() => setSelectedDate(date)}
-                className="flex flex-col items-center gap-2 cursor-pointer group"
+                className="flex flex-col items-center gap-2 cursor-pointer group flex-shrink-0 snap-center"
               >
                 <span className={`text-[8px] font-black tracking-widest transition-colors ${isSelected ? 'text-primary' : 'text-white/20'}`}>
                   {dayName}
@@ -225,7 +263,9 @@ export const Calendar: React.FC<CalendarProps> = ({ onEventClick, onScrollAction
           ) : (
             <div className="flex flex-col items-center justify-center py-32 opacity-10">
               <span className="material-icons-round text-7xl mb-4">event_busy</span>
-              <p className="text-[10px] font-black uppercase tracking-[0.4em]">BU TARİHTE ETKİNLİK YOK</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em]">
+                {language === 'TR' ? 'BU TARİHTE ETKİNLİK YOK' : 'NO EVENTS ON THIS DATE'}
+              </p>
             </div>
           )}
         </div>

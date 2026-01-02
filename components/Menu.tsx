@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Language } from '../App';
 
@@ -7,12 +6,29 @@ interface MenuProps {
   onLogout: () => void;
   language: Language;
   setLanguage: (lang: Language) => void;
+  onEventClick?: (event: any) => void;
 }
 
 type SubView = 'main' | 'tickets' | 'favorites' | 'settings' | 'faq' | 'about' | 'support' | 'blocked' | 'reviews' | 'social';
 
-export const Menu: React.FC<MenuProps> = ({ onBack, onLogout, language, setLanguage }) => {
+export const Menu: React.FC<MenuProps> = ({ onBack, onLogout, language, setLanguage, onEventClick }) => {
   const [subView, setSubView] = useState<SubView>('main');
+  
+  // Settings States
+  const [settings, setSettings] = useState({
+    notifications: true,
+    privateProfile: false,
+    location: true,
+    messaging: true,
+    marketing: true
+  });
+
+  // Social States
+  const [socials, setSocials] = useState({
+    spotify: true,
+    instagram: true,
+    twitter: false
+  });
 
   const MENU_GROUPS = [
     {
@@ -37,6 +53,55 @@ export const Menu: React.FC<MenuProps> = ({ onBack, onLogout, language, setLangu
       ]
     }
   ];
+
+  // Mock data for tickets with full event details
+  const TICKET_EVENTS = [
+    {
+      id: 901,
+      title: 'Neon Pulse Concert',
+      date: '15 Haz 2024 • 20:00',
+      location: 'Volkswagen Arena',
+      price: '₺450',
+      image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=800',
+      category: 'Konser'
+    },
+    {
+      id: 902,
+      title: 'Jazz Night',
+      date: '15 Haz 2024 • 20:00',
+      location: 'Nardis Jazz Club',
+      price: '₺400',
+      image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=800',
+      category: 'Müzik'
+    }
+  ];
+
+  const REVIEWS = [
+    {
+      id: 1,
+      event: 'Neon Pulse Concert',
+      rating: 5,
+      comment: language === 'TR' ? 'İnanılmaz bir atmosferdi! Işık şovları ve ses sistemi muazzamdı.' : 'Amazing atmosphere! Light shows and sound system were magnificent.',
+      date: '16 Haz 2024',
+      image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=200'
+    },
+    {
+      id: 2,
+      event: 'Jazz Night',
+      rating: 4,
+      comment: language === 'TR' ? 'Müzikler çok kaliteliydi fakat içerisi biraz fazla kalabalıktı.' : 'Music quality was great but it was a bit too crowded inside.',
+      date: '16 Haz 2024',
+      image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=200'
+    }
+  ];
+
+  const renderStars = (rating: number) => {
+    return Array(5).fill(0).map((_, i) => (
+      <span key={i} className={`material-icons-round text-[16px] ${i < rating ? 'text-primary' : 'text-white/20'}`}>
+        star
+      </span>
+    ));
+  };
 
   const renderSubView = () => {
     switch (subView) {
@@ -65,14 +130,18 @@ export const Menu: React.FC<MenuProps> = ({ onBack, onLogout, language, setLangu
       case 'tickets':
         return (
           <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-4">
-            {[1, 2].map(i => (
-              <div key={i} className="bg-white/5 border border-white/10 rounded-[28px] p-5 flex items-center gap-4">
-                <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center text-primary">
+            {TICKET_EVENTS.map(event => (
+              <div 
+                key={event.id} 
+                onClick={() => onEventClick?.(event)}
+                className="bg-white/5 border border-white/10 rounded-[28px] p-5 flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-all hover:bg-white/10"
+              >
+                <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center text-primary shrink-0">
                   <span className="material-icons-round text-3xl">qr_code_2</span>
                 </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-white">{i === 1 ? 'Neon Pulse Concert' : 'Jazz Night'}</h4>
-                  <p className="text-xs text-white/40 font-medium">15 Haz 2024 • 20:00</p>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold text-white truncate">{event.title}</h4>
+                  <p className="text-xs text-white/40 font-medium">{event.date}</p>
                 </div>
                 <span className="material-icons-round text-white/20">chevron_right</span>
               </div>
@@ -95,24 +164,86 @@ export const Menu: React.FC<MenuProps> = ({ onBack, onLogout, language, setLangu
           </div>
         );
       case 'settings':
+        return (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-4">
+            {[
+              { id: 'notifications', label: language === 'TR' ? 'Bildirimler' : 'Notifications' },
+              { id: 'privateProfile', label: language === 'TR' ? 'Gizli Profil' : 'Private Profile' },
+              { id: 'location', label: language === 'TR' ? 'Konum Servisleri' : 'Location Services' },
+              { id: 'messaging', label: language === 'TR' ? 'Mesajlaşma İzinleri' : 'Messaging Permissions' },
+              { id: 'marketing', label: language === 'TR' ? 'Pazarlama İletileri' : 'Marketing Communications' }
+            ].map((item, idx) => {
+              const isActive = settings[item.id as keyof typeof settings];
+              return (
+                <div 
+                  key={idx} 
+                  onClick={() => setSettings(prev => ({...prev, [item.id]: !isActive}))}
+                  className="bg-white/5 border border-white/10 rounded-[24px] p-5 flex items-center justify-between cursor-pointer active:bg-white/[0.08] transition-colors"
+                >
+                  <span className="font-bold text-white/80">{item.label}</span>
+                  <button className={`w-12 h-6 rounded-full p-1 transition-all duration-300 relative ${isActive ? 'bg-primary' : 'bg-white/10'}`}>
+                    <div className={`w-4 h-4 bg-white rounded-full shadow-lg transition-transform duration-300 ${isActive ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        );
       case 'reviews':
+        return (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-4">
+             {REVIEWS.map(review => (
+               <div key={review.id} className="bg-white/5 border border-white/10 rounded-[28px] p-5">
+                 <div className="flex items-start gap-4 mb-4">
+                   <div className="w-14 h-14 rounded-2xl overflow-hidden shrink-0 border border-white/10">
+                     <img src={review.image} className="w-full h-full object-cover" alt="" />
+                   </div>
+                   <div className="flex-1 min-w-0">
+                     <h4 className="font-bold text-white truncate">{review.event}</h4>
+                     <div className="flex items-center gap-1 mt-1">
+                       {renderStars(review.rating)}
+                     </div>
+                   </div>
+                   <span className="text-[10px] font-bold text-white/30">{review.date}</span>
+                 </div>
+                 <p className="text-white/60 text-sm leading-relaxed font-medium">
+                   "{review.comment}"
+                 </p>
+               </div>
+             ))}
+          </div>
+        );
       case 'social':
         return (
           <div className="animate-in fade-in slide-in-from-right-4 duration-500 space-y-4">
             {[
-              { label: language === 'TR' ? 'Bildirimler' : 'Notifications', active: true },
-              { label: language === 'TR' ? 'Gizli Profil' : 'Private Profile', active: false },
-              { label: language === 'TR' ? 'Konum Servisleri' : 'Location Services', active: true },
-              { label: language === 'TR' ? 'Mesajlaşma İzinleri' : 'Messaging Permissions', active: true },
-              { label: language === 'TR' ? 'Pazarlama İletileri' : 'Marketing Communications', active: true }
-            ].map((item, idx) => (
-              <div key={idx} className="bg-white/5 border border-white/10 rounded-[24px] p-5 flex items-center justify-between">
-                <span className="font-bold text-white/80">{item.label}</span>
-                <button className={`w-12 h-6 rounded-full p-1 transition-all duration-300 relative ${item.active ? 'bg-primary' : 'bg-white/10'}`}>
-                  <div className={`w-4 h-4 bg-white rounded-full shadow-lg transition-transform duration-300 ${item.active ? 'translate-x-6' : 'translate-x-0'}`}></div>
-                </button>
-              </div>
-            ))}
+              { id: 'spotify', label: 'Spotify', icon: 'https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg', color: '#1DB954' },
+              { id: 'instagram', label: 'Instagram', icon: 'https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg', color: '#E4405F' },
+              { id: 'twitter', label: 'Twitter (X)', icon: 'https://upload.wikimedia.org/wikipedia/commons/c/ce/X_logo_2023.svg', color: '#FFFFFF' }
+            ].map((platform) => {
+              const isConnected = socials[platform.id as keyof typeof socials];
+              return (
+                <div key={platform.id} className="bg-white/5 border border-white/10 rounded-[24px] p-5 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-white p-2 flex items-center justify-center">
+                      <img src={platform.icon} className="w-full h-full object-contain" alt={platform.label} />
+                    </div>
+                    <span className="font-bold text-white/80">{platform.label}</span>
+                  </div>
+                  
+                  <button 
+                    onClick={() => setSocials(prev => ({...prev, [platform.id]: !isConnected}))}
+                    className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${
+                      isConnected 
+                      ? 'bg-primary/20 text-primary border border-primary/30' 
+                      : 'bg-white/5 text-white/40 border border-white/10'
+                    }`}
+                  >
+                    {isConnected ? (language === 'TR' ? 'BAĞLI' : 'CONNECTED') : (language === 'TR' ? 'BAĞLA' : 'CONNECT')}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         );
       case 'faq':

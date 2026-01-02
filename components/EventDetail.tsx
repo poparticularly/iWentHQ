@@ -86,9 +86,9 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, isLiked, onTogg
   }
 
   return (
-    <div className={`fixed inset-0 z-[300] bg-black flex flex-col transition-all duration-500 ease-out ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}>
+    <div className={`fixed inset-0 z-[1000] bg-black flex flex-col transition-all duration-500 ease-out ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}>
       <div className="flex-1 overflow-y-auto no-scrollbar event-detail-scroll relative">
-        <div className="fixed top-12 left-0 right-0 z-[310] px-6 flex justify-between items-center pointer-events-none">
+        <div className="fixed top-12 left-0 right-0 z-[1010] px-6 flex justify-between items-center pointer-events-none">
           <button 
             onClick={onBack}
             className="w-12 h-12 rounded-full bg-black/30 backdrop-blur-md flex items-center justify-center text-white pointer-events-auto border border-white/10 active:scale-90 transition-transform"
@@ -176,7 +176,7 @@ export const EventDetail: React.FC<EventDetailProps> = ({ event, isLiked, onTogg
         </div>
       </div>
 
-      <div className={`fixed bottom-10 left-6 right-6 z-[350] transition-all duration-700 cubic-bezier(0.34, 1.56, 0.64, 1) ${showStickyButton ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-32 opacity-0 scale-90'}`}>
+      <div className={`fixed bottom-10 left-6 right-6 z-[1050] transition-all duration-700 cubic-bezier(0.34, 1.56, 0.64, 1) ${showStickyButton ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-32 opacity-0 scale-90'}`}>
         <button 
           onClick={() => setShowTicketSelection(true)}
           className="w-full h-20 bg-primary rounded-[28px] flex items-center justify-center gap-3 shadow-[0_20px_40px_-10px_rgba(0,230,118,0.5)] group overflow-hidden relative active:scale-95 transition-transform"

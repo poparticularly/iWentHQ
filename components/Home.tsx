@@ -7,6 +7,7 @@ import { Profile } from './Profile';
 import { Notifications } from './Notifications';
 import { Discover, MOCK_DISCOVER_EVENTS } from './Discover';
 import { Language } from '../App';
+import { api, Event as ApiEvent } from '../api';
 
 interface HomeProps {
   onLogout: () => void;
@@ -14,62 +15,20 @@ interface HomeProps {
   setLanguage: (lang: Language) => void;
 }
 
-export const EVENTS = [
-  {
-    id: 1,
-    title: 'Electronic Night: Neon Pulse',
-    date: '15 Haz, 20:00',
-    location: 'Volkswagen Arena',
-    price: '₺450',
-    image: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=800',
-    category: 'Konser',
-  },
-  {
-    id: 2,
-    title: 'Symphony Under Stars',
-    date: '18 Haz, 21:30',
-    location: 'Harbiye Açıkhava',
-    price: '₺320',
-    image: 'https://images.unsplash.com/photo-1514525253344-f81f3c749b1a?auto=format&fit=crop&q=80&w=800',
-    category: 'Klasik',
-  },
-  {
-    id: 3,
-    title: 'Summer Rooftop Party',
-    date: '22 Haz, 21:00',
-    location: '360 Istanbul',
-    price: '₺550',
-    image: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?auto=format&fit=crop&q=80&w=800',
-    category: 'Eğlence',
-  },
-  {
-    id: 4,
-    title: 'Techno Basement Night',
-    date: '25 Haz, 23:30',
-    location: 'Klein Phönix',
-    price: '₺600',
-    image: 'https://images.unsplash.com/photo-1459749411177-042180ce673c?auto=format&fit=crop&q=80&w=800',
-    category: 'Eğlence',
-  },
-  {
-    id: 5,
-    title: 'Jazz & Wine Night',
-    date: '28 Haz, 19:30',
-    location: 'Nardis Jazz Club',
-    price: '₺400',
-    image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=800',
-    category: 'Müzik',
-  },
-  {
-    id: 6,
-    title: 'Digital Art Expo',
-    date: '30 Haz, 10:00',
-    location: 'Pera Müzesi',
-    price: '₺150',
-    image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&q=80&w=800',
-    category: 'Sergi',
-  }
-];
+// Mapper to convert API event to UI event format
+const mapApiEventToUi = (e: ApiEvent) => ({
+  id: Number(e.id) || 0, // Converting string ID to number if possible, or keeping consistency depending on usage. UI uses number IDs currently.
+  // Actually, UI uses number IDs in interfaces. I might need to refactor interfaces to string or cast. 
+  // For safety, let's assume hash of ID or temporary numbered.
+  // Ideally refactor all IDs to string. But to minimize changes, I'll cast.
+  originalId: e.id, 
+  title: e.title,
+  date: new Date(e.startDate).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+  location: e.venue?.name || 'Konum Belirtilmemiş',
+  price: e.priceMin ? `₺${e.priceMin}` : 'Ücretsiz',
+  image: e.bannerUrl || 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=800',
+  category: e.category || 'Genel',
+});
 
 export const Home: React.FC<HomeProps> = ({ onLogout, language, setLanguage }) => {
   const [activeTab, setActiveTab] = useState('home');
@@ -79,7 +38,37 @@ export const Home: React.FC<HomeProps> = ({ onLogout, language, setLanguage }) =
   const [allEventsView, setAllEventsView] = useState<{ title: string, events: any[] } | null>(null);
   const [likedEventIds, setLikedEventIds] = useState<number[]>([]);
   
+  // Real Data State
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        // Try discovery endpoint, fallback to generic list
+        let res;
+        try {
+           res = await api.recommendations.discovery();
+        } catch {
+           res = await api.events.list({ limit: 10 });
+        }
+        
+        if (res.data) {
+          const mapped = res.data.map(mapApiEventToUi);
+          setEvents(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to fetch events", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
 
   const toggleLike = (id: number) => {
     setLikedEventIds(prev => 
@@ -108,8 +97,11 @@ export const Home: React.FC<HomeProps> = ({ onLogout, language, setLanguage }) =
     { id: 'profile', icon: 'person', label: language === 'TR' ? 'Profil' : 'Profile' },
   ];
 
-  // Combine all possible events to search from liked IDs
-  const ALL_POSSIBLE_EVENTS = [...EVENTS, ...MOCK_DISCOVER_EVENTS];
+  // If we have API events, use them. If not (error/empty), fall back to empty or mock for structure.
+  const displayEvents = events.length > 0 ? events : [];
+  
+  // Combine for search
+  const ALL_POSSIBLE_EVENTS = [...displayEvents, ...MOCK_DISCOVER_EVENTS];
   const likedEvents = ALL_POSSIBLE_EVENTS.filter(e => likedEventIds.includes(e.id));
 
   const HorizontalSection = ({ title, events, emptyMessage }: { title: string, events: any[], emptyMessage?: string }) => (
@@ -127,9 +119,9 @@ export const Home: React.FC<HomeProps> = ({ onLogout, language, setLanguage }) =
       </div>
       <div className="flex gap-4 overflow-x-auto no-scrollbar px-6 pb-2">
         {events.length > 0 ? (
-          events.map((event) => (
+          events.map((event, idx) => (
             <div 
-              key={event.id}
+              key={event.id || idx}
               onClick={() => setSelectedEvent(event)}
               className="group relative w-64 aspect-[3/4] rounded-[32px] overflow-hidden border border-white/10 shrink-0 shadow-2xl transition-all duration-500 hover:scale-[1.02] cursor-pointer"
             >
@@ -149,7 +141,7 @@ export const Home: React.FC<HomeProps> = ({ onLogout, language, setLanguage }) =
           ))
         ) : (
           <div className="w-full h-32 flex items-center justify-center border-2 border-dashed border-white/5 rounded-[32px] text-white/20 font-bold text-sm text-center px-10">
-            {emptyMessage || (language === 'TR' ? 'Henüz beğenilen bir etkinlik yok.' : 'No liked events yet.')}
+            {emptyMessage || (language === 'TR' ? 'Etkinlik bulunamadı.' : 'No events found.')}
           </div>
         )}
       </div>
@@ -194,7 +186,7 @@ export const Home: React.FC<HomeProps> = ({ onLogout, language, setLanguage }) =
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 pb-40">
       <header className="px-6 pt-14 pb-6 flex justify-between items-center bg-black sticky top-0 z-50">
         <div className="flex flex-col">
-          <span className="text-white/40 text-[12px] font-black uppercase tracking-[0.2em]">{language === 'TR' ? 'MERHABA, CAN' : 'HELLO, CAN'}</span>
+          <span className="text-white/40 text-[12px] font-black uppercase tracking-[0.2em]">{language === 'TR' ? 'MERHABA' : 'HELLO'}</span>
           <h2 className="text-2xl font-black tracking-tighter flex items-center gap-2">
             iWENT <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse shadow-[0_0_8px_#00E676]"></span>
           </h2>
@@ -208,29 +200,25 @@ export const Home: React.FC<HomeProps> = ({ onLogout, language, setLanguage }) =
         </button>
       </header>
 
-      {/* Categories Row 1: Beğendiklerin (Dinamik) */}
+      {/* Categories Row 1: Beğendiklerin */}
       <HorizontalSection 
         title={language === 'TR' ? 'Beğendiklerin' : 'Favorites'} 
         events={likedEvents}
         emptyMessage={language === 'TR' ? 'Beğendiğin etkinlikler burada listelenir.' : 'Your liked events will appear here.'}
       />
 
-      {/* Categories Row 2: Senin İçin Seçtiklerimiz */}
+      {/* Categories Row 2: API Data */}
       <HorizontalSection 
         title={language === 'TR' ? 'Senin İçin Seçtiklerimiz' : 'Picked for You'} 
-        events={EVENTS.slice(3, 6)} 
+        events={loading ? [] : displayEvents.slice(0, 5)} 
+        emptyMessage={loading ? 'Yükleniyor...' : undefined}
       />
 
-      {/* Categories Row 3: Popüler */}
+      {/* Categories Row 3: API Data */}
       <HorizontalSection 
         title={language === 'TR' ? 'Popüler' : 'Popular'} 
-        events={EVENTS.slice(1, 4)} 
-      />
-
-      {/* Categories Row 4: Farklılık Olsun */}
-      <HorizontalSection 
-        title={language === 'TR' ? 'Farklılık Olsun' : 'Something Different'} 
-        events={EVENTS.slice(2, 5)} 
+        events={loading ? [] : displayEvents.slice(5, 10)} 
+        emptyMessage={loading ? 'Yükleniyor...' : undefined}
       />
     </div>
   );

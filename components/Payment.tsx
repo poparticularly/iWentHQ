@@ -27,7 +27,7 @@ export const Payment: React.FC<PaymentProps> = ({ totalAmount, ticketCount, even
 
   if (paymentStep === 'success') {
     return (
-      <div className="fixed inset-0 z-[600] bg-black flex flex-col animate-in fade-in duration-500 overflow-y-auto no-scrollbar">
+      <div className="fixed inset-0 z-[1300] bg-black flex flex-col animate-in fade-in duration-500 overflow-y-auto no-scrollbar">
         <header className="px-6 pt-14 pb-6 flex items-center justify-center">
            <h2 className="text-xl font-black tracking-tight text-primary">İşlem Başarılı!</h2>
         </header>
@@ -103,7 +103,7 @@ export const Payment: React.FC<PaymentProps> = ({ totalAmount, ticketCount, even
   }
 
   return (
-    <div className="fixed inset-0 z-[500] bg-black flex flex-col animate-in fade-in slide-in-from-right-4 duration-500 overflow-y-auto no-scrollbar">
+    <div className="fixed inset-0 z-[1200] bg-black flex flex-col animate-in fade-in slide-in-from-right-4 duration-500 overflow-y-auto no-scrollbar">
       {/* Background Blur Image */}
       {eventImage && (
         <div className="absolute inset-0 z-0">
@@ -112,7 +112,7 @@ export const Payment: React.FC<PaymentProps> = ({ totalAmount, ticketCount, even
         </div>
       )}
 
-      <header className="px-6 pt-14 pb-6 flex items-center sticky top-0 bg-black/40 backdrop-blur-xl z-[510] border-b border-white/5">
+      <header className="px-6 pt-14 pb-6 flex items-center sticky top-0 bg-black/40 backdrop-blur-xl z-[1210] border-b border-white/5">
         <button onClick={onBack} className="text-white hover:text-primary transition-colors">
           <span className="material-icons-round text-3xl">arrow_back</span>
         </button>
@@ -200,7 +200,7 @@ export const Payment: React.FC<PaymentProps> = ({ totalAmount, ticketCount, even
       </div>
 
       {/* Action Button */}
-      <div className="fixed bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black via-black to-transparent z-[550]">
+      <div className="fixed bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black via-black to-transparent z-[1250]">
         <button 
           onClick={handlePayment}
           disabled={isProcessing}
@@ -223,7 +223,7 @@ export const Payment: React.FC<PaymentProps> = ({ totalAmount, ticketCount, even
       </div>
 
       {isProcessing && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[600] flex items-center justify-center animate-in fade-in duration-300">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1300] flex items-center justify-center animate-in fade-in duration-300">
            <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center shadow-[0_0_60px_rgba(0,230,118,0.6)] animate-bounce">
               <span className="material-icons-round text-black text-5xl">check</span>
            </div>

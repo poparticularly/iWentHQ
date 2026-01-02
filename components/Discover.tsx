@@ -1,5 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Language } from '../App';
 
 interface DiscoverProps {
@@ -84,6 +85,14 @@ export const Discover: React.FC<DiscoverProps> = ({ language, onEventClick, onSc
   const [priceRange, setPriceRange] = useState(1000);
   const [distanceRange, setDistanceRange] = useState(25);
   const [selectedDate, setSelectedDate] = useState('any');
+
+  useEffect(() => {
+    if (showFilters) {
+      onScrollAction?.(false);
+    } else {
+      onScrollAction?.(true);
+    }
+  }, [showFilters, onScrollAction]);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (viewMode === 'swiper') return;
@@ -326,90 +335,101 @@ export const Discover: React.FC<DiscoverProps> = ({ language, onEventClick, onSc
         </div>
       )}
 
-      {showFilters && (
+      {showFilters && createPortal(
         <div className="fixed inset-0 z-[2000] bg-black/80 backdrop-blur-xl flex items-end animate-in fade-in duration-300">
-          <div className="w-full bg-[#0a0a0a] border-t border-white/15 rounded-t-[40px] p-8 pb-12 animate-in slide-in-from-bottom-10 duration-500 max-h-[90vh] overflow-y-auto no-scrollbar shadow-[0_-20px_50px_rgba(0,0,0,0.5)]">
-            <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8"></div>
+          <div className="w-full bg-[#0a0a0a] border-t border-white/15 rounded-t-[40px] flex flex-col h-[85vh] shadow-[0_-20px_50px_rgba(0,0,0,0.5)] relative">
             
-            <div className="flex justify-between items-center mb-10">
-              <h2 className="text-2xl font-black tracking-tight">{language === 'TR' ? 'Filtrele' : 'Filters'}</h2>
-              <button 
-                onClick={() => setShowFilters(false)}
-                className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center text-white/40 border border-white/5 active:scale-90 transition-transform"
-              >
-                <span className="material-icons-round">close</span>
-              </button>
+            {/* Header */}
+            <div className="px-8 pt-8 pb-4 shrink-0">
+               <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-8"></div>
+               <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-black tracking-tight">{language === 'TR' ? 'Filtrele' : 'Filters'}</h2>
+                  <button 
+                    onClick={() => setShowFilters(false)}
+                    className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center text-white/40 border border-white/5 active:scale-90 transition-transform"
+                  >
+                    <span className="material-icons-round">close</span>
+                  </button>
+               </div>
             </div>
 
-            <div className="space-y-12">
-              <div>
-                <h4 className="text-[11px] font-black text-white/30 uppercase tracking-[0.3em] mb-4 ml-1">{language === 'TR' ? 'ZAMAN' : 'TIME'}</h4>
-                <div className="flex flex-wrap gap-2">
-                  {['Tümü', 'Bugün', 'Yarın', 'Bu Hafta Sonu'].map(d => (
-                    <button 
-                      key={d} 
-                      onClick={() => setSelectedDate(d)}
-                      className={`px-6 py-3 rounded-2xl text-[13px] font-bold border transition-all ${selectedDate === d ? 'bg-primary text-black border-primary shadow-[0_4px_12px_rgba(0,230,118,0.2)]' : 'bg-white/5 text-white/40 border-white/5'}`}
-                    >
-                      {d}
-                    </button>
-                  ))}
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto no-scrollbar px-8 pb-32">
+              <div className="space-y-12 pt-4">
+                <div>
+                  <h4 className="text-[11px] font-black text-white/30 uppercase tracking-[0.3em] mb-4 ml-1">{language === 'TR' ? 'ZAMAN' : 'TIME'}</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {['Tümü', 'Bugün', 'Yarın', 'Bu Hafta Sonu'].map(d => (
+                      <button 
+                        key={d} 
+                        onClick={() => setSelectedDate(d)}
+                        className={`px-6 py-3 rounded-2xl text-[13px] font-bold border transition-all ${selectedDate === d ? 'bg-primary text-black border-primary shadow-[0_4px_12px_rgba(0,230,118,0.2)]' : 'bg-white/5 text-white/40 border-white/5'}`}
+                      >
+                        {d}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <div className="flex justify-between items-center mb-4 ml-1">
-                  <h4 className="text-[11px] font-black text-white/30 uppercase tracking-[0.3em]">{language === 'TR' ? 'FİYAT ARALIĞI' : 'PRICE RANGE'}</h4>
-                  <span className="text-primary font-black">₺{priceRange} +</span>
+                <div>
+                  <div className="flex justify-between items-center mb-4 ml-1">
+                    <h4 className="text-[11px] font-black text-white/30 uppercase tracking-[0.3em]">{language === 'TR' ? 'FİYAT ARALIĞI' : 'PRICE RANGE'}</h4>
+                    <span className="text-primary font-black">₺{priceRange} +</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="10000" 
+                    step="100"
+                    value={priceRange}
+                    onChange={(e) => setPriceRange(parseInt(e.target.value))}
+                    className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary"
+                  />
                 </div>
-                <input 
-                  type="range" 
-                  min="0" 
-                  max="10000" 
-                  step="100"
-                  value={priceRange}
-                  onChange={(e) => setPriceRange(parseInt(e.target.value))}
-                  className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary"
-                />
-              </div>
 
-              <div>
-                <div className="flex justify-between items-center mb-4 ml-1">
-                  <h4 className="text-[11px] font-black text-white/30 uppercase tracking-[0.3em]">{language === 'TR' ? 'MESAFE' : 'DISTANCE'}</h4>
-                  <span className="text-primary font-black">{distanceRange} km +</span>
+                <div>
+                  <div className="flex justify-between items-center mb-4 ml-1">
+                    <h4 className="text-[11px] font-black text-white/30 uppercase tracking-[0.3em]">{language === 'TR' ? 'MESAFE' : 'DISTANCE'}</h4>
+                    <span className="text-primary font-black">{distanceRange} km +</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="100" 
+                    step="1"
+                    value={distanceRange}
+                    onChange={(e) => setDistanceRange(parseInt(e.target.value))}
+                    className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary"
+                  />
                 </div>
-                <input 
-                  type="range" 
-                  min="0" 
-                  max="100" 
-                  step="1"
-                  value={distanceRange}
-                  onChange={(e) => setDistanceRange(parseInt(e.target.value))}
-                  className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary"
-                />
               </div>
             </div>
 
-            <div className="mt-12 flex gap-4">
-              <button 
-                onClick={() => {
-                  setPriceRange(1000);
-                  setDistanceRange(25);
-                  setSelectedDate('any');
-                }}
-                className="flex-1 h-16 bg-white/5 border border-white/10 rounded-2xl text-white/40 font-black uppercase tracking-widest text-xs active:scale-95 transition-transform"
-              >
-                {language === 'TR' ? 'TEMİZLE' : 'RESET'}
-              </button>
-              <button 
-                onClick={() => setShowFilters(false)}
-                className="flex-[2] h-16 bg-primary rounded-2xl text-black font-black uppercase tracking-widest text-sm shadow-[0_10px_30px_rgba(0,230,118,0.3)] active:scale-95 transition-transform"
-              >
-                {language === 'TR' ? 'UYGULA' : 'APPLY'}
-              </button>
+            {/* Fixed Footer Buttons */}
+            <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a] to-transparent z-10">
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => {
+                    setPriceRange(1000);
+                    setDistanceRange(25);
+                    setSelectedDate('any');
+                  }}
+                  className="flex-1 h-16 bg-white/5 border border-white/10 rounded-2xl text-white/40 font-black uppercase tracking-widest text-xs active:scale-95 transition-transform hover:bg-white/10 hover:text-white"
+                >
+                  {language === 'TR' ? 'TEMİZLE' : 'RESET'}
+                </button>
+                <button 
+                  onClick={() => setShowFilters(false)}
+                  className="flex-[2] h-16 bg-primary rounded-2xl text-black font-black uppercase tracking-widest text-sm shadow-[0_10px_30px_rgba(0,230,118,0.3)] active:scale-95 transition-transform hover:brightness-110"
+                >
+                  {language === 'TR' ? 'UYGULA' : 'APPLY'}
+                </button>
+              </div>
             </div>
+            
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

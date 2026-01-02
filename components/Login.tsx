@@ -115,7 +115,7 @@ export const Login: React.FC<LoginProps> = ({ onBack, onSignUp, onLoginSuccess }
               <div className={checkboxSquare(rememberMe)}>
                 {rememberMe && <span className="material-icons-round text-black text-[18px]">check</span>}
               </div>
-              <span className="text-white/60 text-[14px] font-medium">Bana Unutturma</span>
+              <span className="text-white/60 text-[14px] font-medium">Beni Hatırla</span>
             </label>
 
             <label className={checkboxWrapper} onClick={() => setAwareChecked(!awareChecked)}>
