@@ -92,7 +92,7 @@ interface MessagesProps {
   onScrollAction?: (visible: boolean) => void;
 }
 
-// Internal Create Group Component
+// Internal Create Group Component (Global)
 const CreateGroupView: React.FC<{
   onBack: () => void;
   onCreate: (name: string, participants: number[]) => void;
@@ -206,6 +206,7 @@ export const Messages: React.FC<MessagesProps> = ({ language, onScrollAction }) 
 
   const filters = ['Tümü', 'Okunmamış', 'Gruplar', 'Destek'];
 
+  // Global Create Group (with participant selection)
   const handleCreateGroup = (name: string, participantIds: number[]) => {
     const newGroup: ChatItem = {
       id: Date.now(),
@@ -223,6 +224,24 @@ export const Messages: React.FC<MessagesProps> = ({ language, onScrollAction }) 
     setShowCreateGroup(false);
   };
 
+  // Instant Create Group (from ChatDetail)
+  const handleInstantGroupCreation = (name: string) => {
+    const newGroup: ChatItem = {
+      id: Date.now() + 1, // Ensure distinct ID
+      name: name,
+      lastMessage: language === 'TR' ? 'Katılma isteği bekleniyor...' : 'Waiting for join requests...',
+      time: language === 'TR' ? 'Şimdi' : 'Just now',
+      unreadCount: 0,
+      isOnline: false,
+      isGroup: true,
+      isTyping: false,
+      avatar: 'https://images.unsplash.com/photo-1514525253344-f81f3c749b1a?auto=format&fit=crop&q=80&w=200',
+      type: 'group'
+    };
+    setChats([newGroup, ...chats]);
+    // Note: In a real app, you might trigger a global notification toast here.
+  };
+
   if (showCreateGroup) {
     return (
       <CreateGroupView 
@@ -234,7 +253,14 @@ export const Messages: React.FC<MessagesProps> = ({ language, onScrollAction }) 
   }
 
   if (selectedChat) {
-    return <ChatDetail chat={selectedChat} onBack={() => setSelectedChat(null)} />;
+    return (
+      <ChatDetail 
+        chat={selectedChat} 
+        language={language}
+        onBack={() => setSelectedChat(null)} 
+        onCreateInstantGroup={handleInstantGroupCreation}
+      />
+    );
   }
 
   return (

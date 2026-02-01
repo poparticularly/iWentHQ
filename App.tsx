@@ -7,16 +7,19 @@ import { SignUp } from './components/SignUp';
 import { EmailSignUp } from './components/EmailSignUp';
 import { Login } from './components/Login';
 import { Home } from './components/Home';
+import { SplashScreen } from './components/SplashScreen';
 
 export type Language = 'TR' | 'EN';
-type Screen = 'welcome' | 'signup' | 'email-signup' | 'login' | 'home';
+type Screen = 'splash' | 'welcome' | 'signup' | 'email-signup' | 'login' | 'home';
 
 const App: React.FC = () => {
-  const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
+  const [currentScreen, setCurrentScreen] = useState<Screen>('splash');
   const [language, setLanguage] = useState<Language>('TR');
 
   const renderScreen = () => {
     switch (currentScreen) {
+      case 'splash':
+        return <SplashScreen onComplete={() => setCurrentScreen('welcome')} />;
       case 'welcome':
         return (
           <main className="flex-1 flex flex-col justify-end items-center px-6 pb-16 w-full max-sm mx-auto h-full animate-in fade-in duration-700">
@@ -81,14 +84,19 @@ const App: React.FC = () => {
 
   return (
     <div className="relative h-screen w-full overflow-hidden flex flex-col selection:bg-primary selection:text-black antialiased bg-black">
-      {currentScreen === 'welcome' && <Slideshow />}
+      {currentScreen === 'splash' && <SplashScreen onComplete={() => setCurrentScreen('welcome')} />}
       
-      <div className="absolute inset-0 z-10 bg-black/40 transition-colors duration-700"></div>
-      <div className="absolute inset-0 z-10 gradient-overlay pointer-events-none"></div>
-      {currentScreen !== 'home' && <StatusBar />}
-      <div className="relative z-20 flex-1 flex flex-col w-full h-full overflow-y-auto custom-scrollbar">
-        {renderScreen()}
-      </div>
+      {currentScreen !== 'splash' && (
+        <>
+          {currentScreen === 'welcome' && <Slideshow />}
+          <div className="absolute inset-0 z-10 bg-black/40 transition-colors duration-700"></div>
+          <div className="absolute inset-0 z-10 gradient-overlay pointer-events-none"></div>
+          {currentScreen !== 'home' && <StatusBar />}
+          <div className="relative z-20 flex-1 flex flex-col w-full h-full overflow-y-auto custom-scrollbar">
+            {renderScreen()}
+          </div>
+        </>
+      )}
     </div>
   );
 };

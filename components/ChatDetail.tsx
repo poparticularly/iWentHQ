@@ -2,20 +2,80 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChatItem } from './Messages';
 import { ChatInfo } from './ChatInfo';
+import { Language } from '../App';
 
 interface Message {
   id: number;
   text: string;
-  sender: 'me' | 'them';
+  sender: 'me' | 'them' | 'system';
   time: string;
 }
 
 interface ChatDetailProps {
   chat: ChatItem;
   onBack: () => void;
+  onCreateInstantGroup: (name: string) => void;
+  language?: Language;
 }
 
-export const ChatDetail: React.FC<ChatDetailProps> = ({ chat, onBack }) => {
+const SimpleGroupInput: React.FC<{
+  onClose: () => void;
+  onConfirm: (name: string) => void;
+  language: Language;
+}> = ({ onClose, onConfirm, language }) => {
+  const [name, setName] = useState('');
+
+  return (
+    <div className="fixed inset-0 z-[2000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-300">
+      <div className="w-full max-w-sm bg-[#1a1a1a] border border-white/10 rounded-[32px] p-6 shadow-2xl scale-100 animate-in zoom-in-95 duration-300">
+        <h3 className="text-xl font-black text-white mb-2 text-center">
+          {language === 'TR' ? 'Grup Oluştur' : 'Create Group'}
+        </h3>
+        <p className="text-white/50 text-sm text-center mb-6 leading-relaxed">
+          {language === 'TR' 
+            ? 'Bu sohbet için yeni bir grup oluşturulacak ve bildirim gönderilecek.' 
+            : 'A new group will be created for this chat and a notification will be sent.'}
+        </p>
+        
+        <div className="bg-white/5 border border-white/10 rounded-2xl px-4 py-3 mb-6 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+            <span className="material-icons-round">groups</span>
+          </div>
+          <input 
+            autoFocus
+            type="text" 
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={language === 'TR' ? "Grup Adı" : "Group Name"}
+            className="bg-transparent border-none text-white font-bold placeholder-white/20 focus:outline-none w-full"
+          />
+        </div>
+
+        <div className="flex gap-3">
+          <button 
+            onClick={onClose}
+            className="flex-1 py-4 rounded-xl bg-white/5 text-white font-black text-xs uppercase tracking-widest hover:bg-white/10 transition-colors"
+          >
+            {language === 'TR' ? 'İptal' : 'Cancel'}
+          </button>
+          <button 
+            onClick={() => {
+              if (name.trim()) onConfirm(name);
+            }}
+            disabled={!name.trim()}
+            className={`flex-1 py-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${
+              name.trim() ? 'bg-primary text-black hover:brightness-110' : 'bg-white/5 text-white/20'
+            }`}
+          >
+            {language === 'TR' ? 'Oluştur' : 'Create'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const ChatDetail: React.FC<ChatDetailProps> = ({ chat, onBack, onCreateInstantGroup, language = 'TR' }) => {
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, text: 'Selam!', sender: 'them', time: '12:20' },
     { id: 2, text: 'Naber, biletleri alabildin mi? Çok az kalmış diyorlar.', sender: 'them', time: '12:22' },
@@ -25,6 +85,7 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({ chat, onBack }) => {
   ]);
   const [inputText, setInputText] = useState('');
   const [showInfo, setShowInfo] = useState(false);
+  const [showGroupInput, setShowGroupInput] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -43,6 +104,23 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({ chat, onBack }) => {
     };
     setMessages([...messages, newMessage]);
     setInputText('');
+  };
+
+  const handleCreateGroupConfirm = (name: string) => {
+    // 1. Create the group in parent
+    onCreateInstantGroup(name);
+    
+    // 2. Add system message
+    const systemMsg: Message = {
+      id: Date.now(),
+      text: language === 'TR' 
+        ? `"${name}" grubu oluşturuldu. Katılımcılara istek gönderildi.` 
+        : `Group "${name}" created. Requests sent to participants.`,
+      sender: 'system',
+      time: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+    };
+    setMessages(prev => [...prev, systemMsg]);
+    setShowGroupInput(false);
   };
 
   if (showInfo) {
@@ -77,12 +155,22 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({ chat, onBack }) => {
           </div>
         </div>
 
-        <button 
-          onClick={() => setShowInfo(true)}
-          className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/60 hover:text-white transition-all"
-        >
-          <span className="material-icons-round text-2xl">more_vert</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Create Group Button (Instant) */}
+          <button 
+            onClick={() => setShowGroupInput(true)}
+            className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/60 hover:text-white hover:bg-primary/20 hover:text-primary transition-all active:scale-90"
+          >
+            <span className="material-icons-round text-2xl">group_add</span>
+          </button>
+          
+          <button 
+            onClick={() => setShowInfo(true)}
+            className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white/60 hover:text-white transition-all active:scale-90"
+          >
+            <span className="material-icons-round text-2xl">more_vert</span>
+          </button>
+        </div>
       </header>
 
       {/* Messages Area */}
@@ -94,23 +182,36 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({ chat, onBack }) => {
           <span className="px-5 py-2 bg-white/5 rounded-full text-[11px] font-black text-white/40 uppercase tracking-[0.25em]">BUGÜN</span>
         </div>
 
-        {messages.map((msg) => (
-          <div 
-            key={msg.id}
-            className={`flex flex-col ${msg.sender === 'me' ? 'items-end' : 'items-start'} max-w-[90%] ${msg.sender === 'me' ? 'ml-auto' : 'mr-auto'}`}
-          >
+        {messages.map((msg) => {
+          if (msg.sender === 'system') {
+             return (
+               <div key={msg.id} className="flex justify-center my-4 px-8">
+                 <div className="bg-primary/10 border border-primary/20 rounded-2xl p-3 text-center">
+                    <p className="text-primary text-[13px] font-bold leading-tight">{msg.text}</p>
+                    <span className="text-[10px] text-white/30 font-bold mt-1 block">{msg.time}</span>
+                 </div>
+               </div>
+             );
+          }
+
+          return (
             <div 
-              className={`px-6 py-4 rounded-[30px] border-2 shadow-xl ${
-                msg.sender === 'me' 
-                  ? 'bg-primary text-black border-primary font-black rounded-tr-lg' 
-                  : 'bg-white/[0.1] text-white border-white/5 font-bold rounded-tl-lg'
-              } text-[16px] leading-relaxed tracking-tight`}
+              key={msg.id}
+              className={`flex flex-col ${msg.sender === 'me' ? 'items-end' : 'items-start'} max-w-[90%] ${msg.sender === 'me' ? 'ml-auto' : 'mr-auto'}`}
             >
-              {msg.text}
+              <div 
+                className={`px-6 py-4 rounded-[30px] border-2 shadow-xl ${
+                  msg.sender === 'me' 
+                    ? 'bg-primary text-black border-primary font-black rounded-tr-lg' 
+                    : 'bg-white/[0.1] text-white border-white/5 font-bold rounded-tl-lg'
+                } text-[16px] leading-relaxed tracking-tight`}
+              >
+                {msg.text}
+              </div>
+              <span className="text-[10px] font-black text-white/30 mt-2 px-3 uppercase tracking-tighter">{msg.time}</span>
             </div>
-            <span className="text-[10px] font-black text-white/30 mt-2 px-3 uppercase tracking-tighter">{msg.time}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Input Area */}
@@ -141,6 +242,15 @@ export const ChatDetail: React.FC<ChatDetailProps> = ({ chat, onBack }) => {
           </button>
         </div>
       </div>
+
+      {/* Modal */}
+      {showGroupInput && (
+        <SimpleGroupInput 
+          language={language}
+          onClose={() => setShowGroupInput(false)}
+          onConfirm={handleCreateGroupConfirm}
+        />
+      )}
     </div>
   );
 };
